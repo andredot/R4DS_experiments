@@ -1,0 +1,176 @@
+---
+title: "12 - Tidy data"
+author: "Andrea Pedot"
+date: "12/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Exercises
+
+1.  Using prose, describe how the variables and observations are organised in each of the sample tables.
+
+- Table 1 each row represent a country-year observation, with four variables in four columns
+
+- Table 2 shows in each row either population or cases, according to the "Type" column which does not represent a variable, while count contains that information
+
+- Table 3 merges in one column both the information on cases and total population as a rate. The third column is character vector, so not easily readable for a script
+
+- Table 4a and 4b represent one row for each observation and one column for each variable, but they are more difficult to combine
+
+2.  Compute the `rate` for `table2`, and `table4a` + `table4b`.
+    You will need to perform four operations:
+
+    a.  Extract the number of TB cases per country per year.
+    b.  Extract the matching population per country per year.
+    c.  Divide cases by population, and multiply by 10000.
+    d.  Store back in the appropriate place.
+
+```{r}
+# from table2
+
+cases <- table2 %>% 
+  group_by(country, year) %>% 
+  filter( type == "cases") %>% 
+  select(count)
+
+population <- table2 %>% 
+  group_by(country, year) %>% 
+  filter( type == "population") %>% 
+  select(count)
+
+rate <- tibble(
+  country = table4c$country,
+  year = table4c$year,
+  type = "rate",
+  count = cases$count / population$count * 1e4
+)
+
+rbind(table2, rate) %>% 
+  arrange(country, year)
+
+# from table4
+table4c <- tibble(
+  country = table4a$country,
+  `1999` =  table4a$`1999` / table4b$`1999`  * 1e4,
+  `2000` =  table4a$`2000` / table4b$`2000`  * 1e4,
+)
+```
+
+
+    Which representation is easiest to work with? Table1
+    
+    Which is hardest? Table2
+    
+    Why? Data can not be easily formatted
+
+3.  Recreate the plot showing change in cases over time using `table2` instead of `table1`.
+    What do you need to do first? Filter to specific rows of the dataframe
+
+```{r}
+ggplot(filter(table2, type == "cases"), aes(year, count)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
+```
+
+
+## Exercises
+1.  Why are `pivot_longer()` and `pivot_wider()` not perfectly symmetrical?\
+    Carefully consider the following example:
+
+```{r, eval = FALSE}
+stocks <- tibble(
+  year   = c(2015, 2015, 2016, 2016),
+  half   = c(   1,    2,    1,    2),
+  return = c(1.88, 0.59, 0.92, 0.17)
+)
+
+stocks %>%
+  pivot_wider(names_from = year, values_from = return) %>%
+  pivot_longer(`2015`:`2016`, names_to = "year", values_to = "return")
+```
+
+"Year" variable now is a character vector.
+
+    (Hint: look at the variable types and think about column *names*.)
+
+    `pivot_longer()` has a `names_ptypes` argument, e.g. `names_ptypes = list(year = double())`.
+    What does it do?
+    
+A list of column name-prototype pairs. A prototype (or ptype for short) is a zero-length vector (like integer() or numeric()) that defines the type, class, and attributes of a vector. Use these arguments to confirm that the created columns are the types that you expect.
+
+If not specified, the type of the columns generated from names_to will be character, and the type of the variables generated from values_to will be the common type of the input columns used to generate them.
+
+2.  Why does this code fail?
+
+```{r, error = TRUE}
+table4a %>%
+  pivot_longer(c(1999, 2000), names_to = "year", values_to = "cases")
+```
+
+It should be with id_cols = c(`1999`, `2000`)
+
+3.  What would happen if you widen this table?
+    Why?
+    How could you add a new column to uniquely identify each value?
+
+```{r}
+people <- tribble(
+  ~name,             ~names,  ~values,
+  #-----------------|--------|-------
+  "Phillip Woods",   "age",        45,
+  "Phillip Woods",   "height",    186,
+  "Phillip Woods",   "age",        50,
+  "Jessica Cordero", "age",        37,
+  "Jessica Cordero", "height",    156
+)
+
+people %>% 
+  group_by( name, names) %>% 
+  mutate( i = row_number()) %>% 
+  pivot_wider( names_from = names,
+               values_from = values,
+               names_repair = "minimal")
+```
+The output is a vector for each of the values, since row 1 and 3 have the same identifiers.
+
+4.  The simple tibble below summarizes information on whether employees at a small company know how to drive and whether they prefer a position where they will need to drive daily for sales calls.
+    Tidy the table to get it into a format where each observation is an employee.
+    Do you need to make it wider or longer?
+    What are the variables?
+
+```{r}
+employees <- tribble(
+  ~know_drive, ~prefer, ~not_prefer,
+  "yes",       20,      10,
+  "no",        NA,      12
+)
+
+employees %>% 
+  pivot_longer(c("prefer", "not_prefer"),
+               names_to = "preference",
+               values_to = "count",
+               values_drop_na = TRUE)
+```
+
+5.  One way of summarising the distribution of one categorical variable based on the levels of another is using `dplyr::count()`, e.g. the following gives the distribution of `drv` (type of drive train) for each level of `cyl` (number of cylinders) for cars in the `mpg` dataset.
+
+    ```{r}
+    mpg %>%
+      count(cyl, drv)
+    ```
+
+    A contingency table is another way commonly used way of summarising this information.
+    Use one of the pivoting functions to construct the contingency table shown below based on the output above.
+
+    ```{r echo = FALSE}
+    mpg %>%
+      count(cyl, drv) %>%
+      pivot_wider(names_from = drv, values_from = n)
+    ```
+
+

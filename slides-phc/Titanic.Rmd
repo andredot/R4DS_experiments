@@ -1,0 +1,252 @@
+---
+title: "Exploratory Data Analysis - Titanic dataset"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse) # In questa sezione potete caricare le librerie che utilizzate 
+                   # senza che siano poi visibili nel file finale di presentazione
+```
+
+## Import dei dati
+
+Per prima cosa procediamo con:
+
+- Importazione dei dati
+- Trasformazione dei dati non categoriali ma che dovrebbero esserlo in dati categoriali
+- Creo nuova variabile titanic che racchiude il dataset titanic_train per non riscrivere ogni volta _train
+
+```{r}
+library(titanic) #la prima volta eseguire install.packages("titanic") se non lo avete già installato
+
+# creiamo una lista delle variabili da "fattorizzare", ovvero trasformarle in etichette
+factors <- c('Survived', 'Pclass', 'Sex', 'Cabin', 'Embarked')
+
+# lapply() applica la funzione as.factor() che "fattorizza" ogni colonna di titanic_train che si chiama come quelle contenute nella variabile "factors" creata alla riga precedente
+titanic_train[factors] <- lapply(titanic_train[factors], function(x) as.factor(x))
+
+#tibble() è un tipo particolare di dataset che meglio si integra nel tidyverse
+titanic <- tibble(titanic_train)
+```
+
+Fino a che si fanno solo visualizzioni con ggplot, la riga `factors <- ...` e la riga successiva che sfrutta la funzione `lapply()` possono essere saltate.
+
+### Remind sul dataset
+
+Per osservare il vostro dataset potete utilizzare la funzione `View(titanic)` oppure `glimpse(titanic)` e per cercare aiuto su cosa rappresentano le variabili potete usare l'help scrivendo nella console `?titanic_train`.
+
+```{r, echo = FALSE}
+View(titanic)
+```
+
+Il dataset si dice che è "tidy" quando ad ogni riga corrisponde un'osservazione (in questo caso ognugno degli 891 passeggeri ha una riga nel dataset) e in ogni colonna viene rappresentata una variabile (per ogni passeggero troviamo 12 colonne che descrivono vari aspetti, dal nome al sesso alla classe).
+
+Il dataset `titanic` è già "tidy", le esplorazioni saranno più facili.
+
+### Esercizio 1
+
+Quale colonna contiene l'informazione sulla classe d'imbarco di ogni passeggero?
+
+Come posso usare questa informazione per sapere quanti passeggeri ci sono in ogni classe? 
+
+```{r}
+ggplot(titanic, aes(x = Pclass, 
+                    fill = Pclass) ) +
+  geom_bar()
+
+# se voglio vedere proporzione posso aggiungere nelle estetiche anche
+# y= after_stat(prop), group = 1
+```
+
+Suggerimento: Quale `geom_function` si utilizza per creare un grafico a barre?
+
+Spazio per la tua analisi del grafico:
+
+- usa i trattini per costruire 
+- un elenco puntato
+
+### Esercizio 2
+
+Quale variabile contiene le informazioni sul genere dei passeggeri?
+
+Ci sono più uomini o donne per ciascuna classe?
+
+Come varia la loro proporzione tra le varie classi?
+
+```{r}
+ggplot(titanic, aes( x = Pclass, 
+                     fill = Sex) ) +
+  geom_bar(position = "dodge")
+```
+
+Suggerimento: Quale argomento vi permette di colorare/riempire i grafici a barre?
+
+Quale `position = " "` vi facilita il confronto?
+
+Spazio per la tua analisi del grafico:
+
+
+### Esercizio 3
+
+Quale variabile contiene le infromazioni sulla sopravvivenza al naufragio?
+
+Vi sono differenze di sopravvivenza al variare della classe?
+
+Ipotizza il risultato che ti aspetti prima di creare il grafico, poi esplora la tua ipotesi tramite un `ggplot`.
+
+```{r}
+ggplot(titanic, aes(x= Pclass, 
+                    fill = Survived)) +
+  geom_bar(position = "dodge")
+#oppure
+ggplot(titanic, aes(x = Survived,
+                    fill = Pclass, 
+                    y = after_stat(prop),
+                    group = Pclass)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Probabilità di sopravvivenza al variare della classe",
+       x = "Sopravvivenza",
+       y= "Probabilità")
+```
+
+Come ti spieghi il risultato della tua analisi?
+
+Spazio per la tua analisi del grafico: 
+
+### Esercizio 4
+
+Una donna aveva più probabilità di sopravvivere?
+
+```{r}
+ggplot(titanic, aes(x = Survived, 
+                    fill = Sex, 
+                    y= after_stat(prop),
+                    group = Sex)) +
+  geom_bar(position = "dodge")
+```
+
+Come te lo spieghi? La strategia del "prima le donne e i bambini" sembra aver funzionato?
+
+Spazio per la tua analisi del grafico:
+
+### Esercizio 5
+
+Una delle ipotesi che si possono fare è che la differenza nella sopravvivenza sia legata più alla maggior presenza femminile nelle classi d'imbarco più lussuose, che abbiamo visto avere una sopravvivenza maggiore.
+
+Ti sembra un'ipotesi sensata? Per esplorare più a fondo questa intuizione prova a rispondere con un grafico a questa domanda:
+
+Una donna aveva più probabilità di sopravvivere rispetto agli uomini della sua stessa classe d'imbarco?
+
+```{r}
+ggplot(titanic, aes(x = Survived, 
+                    fill = Sex, 
+                    y= after_stat(prop), 
+                    group = Sex) ) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~ Pclass)
+```
+
+Spazio per la tua analisi del grafico:
+
+### Esercizio 6
+
+In che modo l'età è correlata con la sopravvivenza? Quale ti aspetti che sia la sopravvivenza dei bambini (tra i 5 e i 15 anni) ?
+
+Quali fasce di età sembrano avere una maggiore sopravvivenza? Quali una peggiore sopravvivenza?
+
+```{r}
+ggplot(titanic, aes(x = Age,
+                    fill = Survived)) +
+  geom_density(alpha = 0.5)
+```
+Suggerimento: prova a usare la geometria geom_density(). Ti ricordi come si imposta la trasparenza dei grafici nelle estetiche?
+
+Quali sono le possibili spiegazioni per il fenomeno?
+
+Domanda: dovrebbe averti dato la notifica: "Removed 177 rows containing non-finite values (stat_density).", cosa significa secondo te?
+
+Commento libero:
+
+### Esercizio 7
+
+Essere parte di una famiglia aumentava le tue possibilità di sopravvivenza rispetto all'essersi imbarcati da soli?
+
+Prima di fare il grafico creiamo la nuova variabile Family che contenga il numero di membri della famiglia presenti a bordo del passeggero, sommando `SibSp` e `Parch`
+
+```{r}
+titanic <- titanic %>%
+  mutate( Family = SibSp + Parch )
+```
+
+Ora provate a costruire il grafico:
+
+```{r}
+ggplot(titanic, aes(x=Family, fill= Survived)) +
+  geom_bar(position = "fill")
+```
+
+Suggerimento: quale `position = "  "` potrebbe aiutare a comparare più comodamente le varie percentuali?
+
+Spazio per la tua analisi del grafico:
+- la sopravvivenza aumenta con il crescere dei membri a bordo? Fino a quando?
+- quale potrebbe essere una criticità di questo grafico? Come viene rappresentata la nostra confidenza che la stima della percentuale di sopravvivenza sia attendibile?
+
+### Esercizio 8
+
+Il luogo d'imbarco ha avuto un impatto sulla probabilità di sopravvivenza?
+
+```{r}
+ggplot(titanic, aes(x= Embarked, 
+                    fill = Survived, 
+                    y = after_stat(prop), 
+                    group = Survived)) +
+  geom_bar(position = "fill")
+```
+
+Spazio per la tua analisi del grafico:
+
+### Esercizio 9
+
+Il costo pagato (o "ticket fare") per i biglietti è legato alla classe d'imbarco? 
+
+```{r}
+ggplot(titanic, aes(y=Pclass,
+                    x=Fare))+
+  geom_boxplot() 
+```
+
+Suggerimento: Un boxplot potrebbe aiutarti nella visualizzazione
+
+Spazio per la tua analisi del grafico:
+
+### Esercizio 10
+
+Il costo pagato per i biglietti è correlato con la sopravvivenza?
+
+```{r}
+ggplot(titanic, aes(x=Fare,
+                    fill = Survived)) +
+  geom_density(alpha=0.5)
+```
+
+Suggerimento: Prova a utilizzare geom_density
+
+Spazio per la tua analisi del grafico:
+
+### Esercizi liberi
+
+Siete liberi di sperimentare altre visualizzazioni nel dataset, vi ricordiamo che per creare altre zone eseguibili di codice basta premerete contemporaneamente i tasti "ctrl+alt+i"
+
+```{r}
+
+```
+
+
+Quando hai terminato premi su `knit` (il gomitolo) per produrre automaticamente un report condivisibile in html del tuo lavoro.
+  
+  
+  
+  
+  
+  

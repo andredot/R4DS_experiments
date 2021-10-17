@@ -1,0 +1,71 @@
+---
+title: "EDA_data_explorer"
+author: "Andrea Pedot"
+date: "11/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## LIBRARIES
+
+```{r}
+library(DataExplorer)
+library(tidyverse)
+```
+
+## DATA
+
+```{r}
+dataset <- gss_cat
+dataset %>% glimpse()
+```
+
+## 1 - Data Introduction
+
+```{r}
+dataset %>% 
+  introduce() %>% 
+  rmarkdown::paged_table()
+```
+
+
+```{r}
+dataset %>% plot_intro()
+```
+
+## 2 - Missing Values
+
+```{r}
+dataset %>% plot_missing()
+```
+
+
+```{r}
+dataset %>% profile_missing()
+```
+
+## 3 - Continuous Features
+
+```{r}
+dataset %>% plot_density()
+```
+
+
+```{r}
+dataset %>% plot_histogram()
+```
+
+## 4 -  Categorical Features
+
+```{r}
+dataset %>% plot_bar()
+```
+
+## 5 -  Relationships
+
+```{r}
+dataset %>% plot_correlation(maxcat = 15)
+```

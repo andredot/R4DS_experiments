@@ -1,0 +1,163 @@
+---
+title: "10 - Tibble"
+author: "Andrea Pedot"
+date: "24/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Exercises
+
+1.  How can you tell if an object is a tibble?
+    (Hint: try printing `mtcars`, which is a regular data frame).
+    
+```{r}
+is_tibble(mtcars)
+```
+
+2.  Compare and contrast the following operations on a `data.frame` and equivalent tibble.
+    What is different?
+    Why might the default data frame behaviours cause you frustration?
+
+    ```{r, eval = FALSE}
+    df <- data.frame(abc = 1, xyz = "a")
+    df$x # this partial matching is a problem
+    df[, "xyz"] #it is long to write, why does it return a list?
+    df[, c("abc", "xyz")] # why does it return a data.frame
+    
+    #try with tibble
+    df <- as_tibble(data.frame(abc = 1, xyz = "a"))
+    df$x # ERROR (unknown column)
+    df[, "xyz"] # return 1*1 tibble
+    df[, c("abc", "xyz")] # return 1*2 tibble
+    ```
+
+3.  If you have the name of a variable stored in an object, e.g. `var <- "mpg"`, how can you extract the reference variable from a tibble?
+
+```{r}
+var <- "mpg"
+
+mtcars$var # does not work in data.frame
+mtcars[, var] # output is a list
+
+tibblecars <- as_tibble(mtcars)
+tibblecars$var # does not work in data.frame
+tibblecars[, var] # output is a tibble
+```
+
+4.  Practice referring to non-syntactic names in the following data frame by:
+
+    ```{r}
+annoying <- tibble(
+  `1` = 1:10,
+  `2` = `1` * 2 + rnorm(length(`1`))
+)
+    ```
+
+    1.  Extracting the variable called `1`.
+
+    ```{r}
+annoying$`1`
+```
+
+    2.  Plotting a scatterplot of `1` vs `2`.
+    
+```{r}
+ggplot(annoying,
+       aes( x = `1`,
+            y = `2` )) +
+  geom_point()
+```
+
+    3.  Creating a new column called `3` which is `2` divided by `1`.
+    
+```{r}
+(
+annoying <- annoying %>% 
+  mutate( `3` = `2` /  `1`)
+)
+```
+
+    4.  Renaming the columns to `one`, `two` and `three`.
+
+```{r}
+annoying %>% 
+  rename( `one` = `1`,
+          `two`  = `2` ,
+          `three`  = `3` )
+```
+
+    
+5.  What does `tibble::enframe()` do?
+    When might you use it?
+    
+Converts named atomic vectors or lists to one- or two-column.
+
+enframe(x, name = "name", value = "value") with x as an atomic vector, name as the name column (if NULL it will produce a one-column tibble) and value for values.
+
+It will be used to quickly convert vectors in tibble for analytical purposes.
+
+6.  What option controls how many additional column names are printed at the footer of a tibble?
+
+```{r, eval = FALSE}
+tibble.max_extra_cols # Number of extra columns printed in reduced form. Default: 100
+```
+
+### Exercises
+
+1.  What function would you use to read a file where fields were separated with\
+    "\|"?
+    
+```{r, eval = FALSE}
+read_delim( file, delim = "|")
+```
+    
+2.  Apart from `file`, `skip`, and `comment`, what other arguments do `read_csv()` and `read_tsv()` have in common?
+
+-  col_names = TRUE as the first row of the input will be used as the column names, otherwise column names will be generated automatically: X1, X2, X3. If a character vector, values will be used as the names of the columns
+-  col_types = NULL, all column types will be imputed from the first 1000 rows on the input
+-  locale = default_locale(), it controls things like the default time zone, encoding, decimal mark, big mark
+-  na = c("", "NA") is the character vector of strings to interpret as missing values
+-  quoted_na = TRUE, if missing values inside quotes should be treated as missing values
+-  quote = "\"" is the single character used to quote strings
+-  trim_ws = TRUE, as leading and trailing whitespace should be trimmed from each field before parsing it
+-  n_max = Inf, Maximum number of records to read
+-  guess_max = min(1000, n_max), Maximum number of records to use for guessing column types
+-  progress = show_progress() to display a progress bar
+-  skip_empty_rows = TRUE if blank rows should be ignored altogether
+
+3.  What are the most important arguments to `read_fwf()`?
+
+- file,
+- col_positions, as created by fwf_empty(), fwf_widths() or fwf_positions()
+
+You can specify column positions in several ways, given that fwf_sample contains the fixed width file:
+
+- Guess based on position of empty columns read_fwf(fwf_sample, fwf_empty(fwf_sample, col_names = c("first", "last", "state", "ssn")))
+- A vector of field widths, read_fwf(fwf_sample, fwf_widths(c(20, 10, 12), c("name", "state", "ssn")))
+- Paired vectors of start and end positions, read_fwf(fwf_sample, fwf_positions(c(1, 30), c(20, 42), c("name", "ssn")))
+- Named arguments with start and end positions, read_fwf(fwf_sample, fwf_cols(name = c(1, 20), ssn = c(30, 42)))
+- Named arguments with column widths, read_fwf(fwf_sample, fwf_cols(name = 20, state = 10, ssn = 12))
+
+4.  Sometimes strings in a CSV file contain commas.
+    To prevent them from causing problems they need to be surrounded by a quoting character, like `"` or `'`. By default, `read_csv()` assumes that the quoting character will be `"`.
+    What argument to `read_csv()` do you need to specify to read the following text into a data frame?
+
+    ```{r, eval = FALSE}
+( x <- read_csv("x,y\n1,'a,b'", quote = "'") )
+    ```
+
+5.  Identify what is wrong with each of the following inline CSV files.
+    What happens when you run the code?
+
+    ```{r, eval = FALSE}
+    read_csv("a,b\n1,2,3\n4,5,6") # 2 columns but 3 columns literal data
+    read_csv("a,b,c\n1,2\n1,2,3,4") # 3 columns but 2 or 4 columns literal data
+    read_csv("a,b\n\"1") # closing quote at end of file + 2 columns but 1 columns literal data
+    read_csv("a,b\n1,2\na,b") # int parsed as char
+    read_csv("a;b\n1;3") # different delimiter
+    ```

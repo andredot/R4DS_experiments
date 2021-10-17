@@ -1,0 +1,142 @@
+---
+title: "Esercizi_ggplot_visualization"
+author: "NOME COGNOME"
+date: "11/2/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Intro a R Markdown
+
+Questo è un documento di markdown, utile per condividere i file, quando clicchi sul bottone **Knit** viene generato un documento che include sia testo che codice R, come questo
+
+```{r}
+glimpse(midwest)
+```
+
+In questi brevi esercizi di ripasso lavoreremo con questo dataset. Se hai bisogno di usare un pezzo di codice premi `CTRL + Alt + i` per crearlo e `CTRL + Enter` per eseguirlo dopo averlo scritto.
+
+Prova a rispondere alle seguenti domande:
+
+1. Quante righe e quante colonne ha il dataset? Cosa rappresenta ogni riga?
+```{r}
+# inserisci il codice qui
+# il cancelletto "#" serve per commentare 
+# (non viene eseguito)
+```
+
+2. Cosa rappresenta la variabile `popasian`? [suggerimento: usa `?midwest` per aprire la finestra d'aiuto]
+
+
+## Includere grafici
+
+Si possono anche includere grafici, per esempio:
+
+```{r}
+plot(pressure)
+```
+
+Ma ora riprendiamo con le domande:
+
+  3. Fai uno scatterplot della percentuale di poopolazione povera verso percentuale di popolazione bianca. Cosa noti?
+```{r}
+#inserisci qui la tua soluzione
+```
+  ...e qui il tuo commento
+
+  4. Fai uno scatterplot in cui mostri la percentuale di anziani in povertà (su un asse, decidi quale) e la percentuale delle varie etnie sull'altro. Usa l'estetica `color =` per distinguerle
+```{r}
+#inserisci qui la tua soluzione
+```
+
+  5. Prova a rispondere alla seguente domanda: le contee con più gente scolarizzata sono le stesse che hanno una popolazione  più ricca?
+```{r}
+#inserisci qui la tua soluzione
+```
+
+## Linee di tendenza
+
+È molto facile tracciare una linea di tendenza, basta aggiungere
+```{r, eval = FALSE}
+ggplot(data = <DATA>) +
+  geom_plot(aes = <MAPPING>) +   # ricorda sempre il '+' a fine riga
+  geom_smooth()
+```
+
+  6. Prova a rifare il grafico del punto (5) aggiungendo anche una linea di tendenza
+```{r}
+
+```
+
+  7. Prova a rifare il grafico del punto (4) aggiungendo anche una linea di tendenza. Cosa è successo alle linee di tendenza?
+```{r}
+
+```
+
+## Facet
+
+  8. Partendo dal grafico del punto (6), prova a suddividere il grafico per `state` con la funzione facet_wrap(). Per il simbolo `~` il comando è `Alt + 126` (su windows) o `Alt + 5` su Mac
+```{r}
+
+```
+
+  9. Con geom_bar() mostra la popolazione totale nei 5 stati
+```{r}
+
+```
+
+  10. Con geom_bar() mostra la popolazione totale nelle varie contee, ma suddividi il grafico per stati. Cosa puoi dire sulla popolazione delle varie contee nei diversi stati?
+```{r}
+
+```
+  
+## Spazio libero alla sperimentazione
+
+[Al posto di questo testo inserisci la domanda a cui vorresti rispondere]
+
+```{r}
+# inserisci qui il codice per il grafico che risponde alla domanda
+```
+
+[Lascia qui le tue conclusioni]
+
+
+## Esercizi della lezione (avanzati)
+
+1. Cosa succede se si sfaccetta su una variabile continua?
+
+2. Cosa significano le celle vuote nel grafico con "facet_grid (drv ~ cyl)"?
+    Come si relazionano a questo plot?
+    
+``` {r, eval = FALSE}
+ggplot (data = mpg) +
+  geom_point (mapping = aes (x = drv, y = cyl))
+```
+
+3. Quali grafici crea il codice seguente? Cosa fa `.`?
+
+``` {r, eval = FALSE}
+ggplot (data = mpg) +
+  geom_point (mapping = aes (x = displ, y = hwy)) +
+  facet_grid (drv ~.)
+    
+ggplot (data = mpg) +
+  geom_point (mapping = aes (x = displ, y = hwy)) +
+  facet_grid (. ~ cyl)
+```
+
+4. Quando si usa `facet_grid ()` di solito si mette la variabile con più livelli unici nelle colonne. Perché?
+
+5. Prendendo questo grafico, quali sono i vantaggi nell'usare la suddivisione al posto dell'estetica del colore? Quali sono gli svantaggi? Come potrebbe cambiare l'equilibrio se avessi un dataset più grande?
+
+```{r}
+ggplot (data = mpg) +
+  geom_point (mapping = aes (x = displ, y = hwy)) +
+  facet_wrap (~ class)
+```

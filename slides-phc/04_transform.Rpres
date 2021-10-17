@@ -1,0 +1,346 @@
+04_transform
+========================================================
+author: Andrea
+date: 01-04-2020
+width: 1500
+height: 768
+
+Obiettivi della serata
+========================================================
+
+É raro che i dati siano esattamente nella forma giusta di cui hai bisogno, per questo nei prossimi incontri vedremo come:
+
+- creare nuove variabili
+- riordinarle
+- riassumerle
+
+Per partire avremo bisogno di due librerie
+
+```{r}
+library (nycflights13) # tutti i voli del 2013 di New York
+library (tidyverse) # ci concentreremo su dplyr
+```
+
+nycflights13::flights
+========================================================
+
+```{r, echo = FALSE}
+flights
+```
+
+
+Le basi di dplyr
+========================================================
+
+Per risolvere la maggior parte dei problemi di manipolazione dei dati bastano 5 funzioni:
+
+- Scegliere le osservazioni in base ai loro valori (`filter()`). 
+- Riordinare le righe (`arrange()`). 
+- Scegliere le variabili in base al nome (`select()`). 
+- Creare nuove variabili a partire da quelle esistenti (`mutate()`).
+- Comprimere molti valori in un unico riepilogo (`summarize ()`). 
+
+Queste vengono usate insieme a `group_by ()` che permette di eseguire le operazioni su sottoinsieme del dataset invece che su quello intero.
+
+Una sintassi di base uguale per tutti
+========================================================
+
+Tutti i verbi funzionano in modo simile:
+
+- primo argomento è il dataset
+- gli altri argomenti spiegano cosa fare, le variabili (nomi delle colonne) vengono usate senza virgolette
+- risultato è un nuovo (tibble) dataset
+
+! attenzione che le funzioni dplyr non modificano mai i loro input. Per salvare il risultato si dovrà creare una nuova variabile con `<-`
+
+Filtrare le righe con `filter()`
+========================================================
+
+Permette di creare sottoinsiemi di osservazioni in base ai loro valori.
+
+```{r}
+filter(flights, month == 12, day == 25) 
+```
+
+Gli operatori standard sono `>`,  `>=`, `<`,  `<=`,  `!=` (diverso) e `==` (uguale) o anche `near()` (versione più flessibile), combinati in espressioni grazie a parentesi
+
+Operatori booleani
+========================================================
+
+```{r bool-ops, echo = FALSE, fig.cap = " `x` è il cerchio di sinistra,`y` è il cerchio di destra e la regione ombreggiata mostra quale parti selezionate da ogni operatore"}
+knitr::include_graphics("diagrams/transform-logical.png")
+```
+
+Combinare gli operatori tra loro
+========================================================
+
+L'ordine delle operazioni non funziona come l'inglese, per trovare i voli in partenza a novembre o dicembre non si può scrivere `filter (voli, mese == (11 | 12))`.
+
+La sintassi corretta è
+
+```{r, eval = FALSE}
+filter(flights, month = 11 | month = 12)
+```
+ 
+o in alternativa
+
+```{r}
+filter(flights, month %in% c(11, 12))
+```
+
+Attenzione ai `NA` #1
+========================================================
+
+I `NA` sono contagiosi, le operazioni che li coinvolgono spesso danno `NA` come risultato
+
+```{r}
+NA > 5
+10 == NA
+```
+
+***
+
+```{r}
+NA + 10
+NA / 2
+NA == NA
+```
+
+Attenzione ai `NA` #2
+========================================================
+
+Per capire se un valore è `NA` si usa is.na(x).
+
+`filter()` mantiene solo le righe il cui il risultato è `TRUE` (quindi esclude sia i `FALSE` che i `NA`). Se si vogliono mantenere, la sintassi è quella dell'ultima riga
+
+```{r}
+df <- tibble(x = c(1, NA, 3))
+# filter(df, x > 1)
+filter(df, is.na(x) | x > 1)
+```
+
+Esercizi #1 - Trova tutti i voli che
+========================================================
+
+a. hanno avuto un ritardo all'arrivo di due o più ore
+
+b. hanno volato a Houston ("IAH" o "HOU")
+
+c. sono stati gestiti da United, American o Delta
+
+d. sono partiti in estate (luglio, agosto e settembre)
+  
+e. sono arrivati con più di due ore di ritardo, ma non sono partiti in ritardo
+
+f. sono stati ritardati di almeno un'ora alla partenza, ma hanno recuperato almeno 30 minuti mentre erano in volo
+
+***  
+
+g.Sono partiti tra mezzanotte e le 6:00 (incluso)
+
+2. Un altro utile aiuto per il filtraggio di dplyr è `between ()`. Che cosa fa? Si può usare per semplificare il codice necessario per rispondere alle sfide precedenti?
+
+3. Quanti voli hanno un "dep_time" mancante?
+    Quali altre variabili mancano?
+    Cosa potrebbero rappresentare queste righe?
+
+Riordinare le righe con `arrange()`
+========================================================
+
+Funziona in modo simile a `filter()` tranne per il fatto che invece di selezionare le righe, cambia il loro ordine sulla base di nomi di colonne (o espressioni più complicate).
+
+Ogni nuova colonna fornita viene usata per gestire i pareggi nelle colonne precedenti
+
+```{r}
+arrange(flights, year, month, day)
+```
+
+Riordinare in ordine decrescente si fa con `desc()`
+========================================================
+
+```{r}
+arrange(flights, desc(dep_delay))
+```
+
+I valori mancanti (NA) sono sempre ordinati in fondo
+
+```{r}
+df <- tibble(x = c(5, 2, NA))
+arrange(df, x)
+arrange(df, desc(x))
+```
+
+Esercizi #2
+========================================================
+
+1. Ordina "flights" per trovare i voli con i ritardi di partenza più lunghi
+
+2. Ordina "flights" per trovare i voli più veloci (velocità massima).
+
+3. Quali voli hanno viaggiato più lontano? Quali hanno viaggiato per meno tempo?
+
+4. Come potresti usare `arrange()` per ordinare tutti i valori mancanti all'inizio? (suggerimento: usa `! Is.na ()`).
+
+
+Selezionare le colonne con `select ()`
+========================================================
+
+`select ()` consente di ingrandire rapidamente un sottoinsieme utile a quelle davvero interessanti utilizzando operazioni basate sui nomi delle variabili, soprattutto quando queste sono molte.
+
+```{r}
+select(flights, year, month, day) # by name
+
+# all columns between (inclusive)
+select(flights, year:day)
+
+# all columns except (inclusive)
+select(flights, -(year:day))
+```
+
+Funzioni di supporto a select()
+========================================================
+
+- `starts_with("abc")`: nomi che iniziano con "abc".
+
+- `ends_with("xyz") `: nomi che finiscono con" xyz ".
+
+- `contains("ijk")`: nomi che contengono "ijk".
+
+- `num_range("x", 1: 3)`: corrisponde a "x1", "x2" e "x3"
+
+"?select" apre l'help per maggiori dettagli.
+
+`rename()` funziona come "select" ma mantiene tutte le colonne.
+
+Esercizi #3
+========================================================
+
+1. Fai un brainstorming su quanti più modi possibili per selezionare "dep_time", "dep_delay", "arr_time" e "arr_delay" da "flights".
+
+2. Cosa fa la funzione `any_of()`? Perché potrebbe essere utile insieme a questo vettore?
+```{r}
+variables <- c("year", "month", "day", "dep_delay", "arr_delay")
+```
+
+***
+
+3. Il risultato dell'esecuzione del seguente codice ti sorprende?
+    In che modo gli helper selezionati gestiscono il caso per impostazione predefinita?
+    Come puoi modificare tale impostazione predefinita?
+
+```{r, eval = FALSE}
+select(flights, contains("TIME"))
+```
+
+Aggiungere nuove variabili con `mutate()` #1
+========================================================
+
+`mutate ()` aggiunge nuove colonne che sono funzioni di colonne esistenti.
+
+Innanzitutto creiamo un dataset più ristretto per vedere tutte le variabili
+
+```{r}
+flights_sml <- select(flights, 
+  year:day, 
+  ends_with("delay"), 
+  distance, 
+  air_time
+)
+```
+
+a cui segue
+
+***
+
+```{r, eval = FALSE}
+mutate(flights_sml,
+  gain = dep_delay - arr_delay,
+  speed = distance / air_time * 60,
+  hours = air_time / 60,
+  gain_per_hour = gain / hours
+)
+```
+
+Aggiungere nuove variabili con `mutate()` #2
+========================================================
+
+```{r, echo = FALSE}
+mutate(flights_sml,   gain = dep_delay - arr_delay,   speed = distance / air_time * 60,   hours = air_time / 60,   gain_per_hour = gain / hours )
+```
+ 
+Operatori utili nei mutate #1
+========================================================
+
+- aritmetici: `+`, `-`, `*`, `/`, `^`
+- funzioni aggreganti: `sum(x)`, `mean(x)`
+- funzioni cumulative:  `cumsum ()`, `cumprod ()`, `cummin ()`, `cummax ()`
+- aritmetica modulare : `%/%` (divisione intera) and `%%` (resto), dove `x == y * (x %/% y) + (x %% y)`
+
+Ad esempio, nel dataset si può rompere "ora" e "minuto" da "dep_time" con:
+
+***
+
+```{r}
+transmute(flights,
+  dep_time,
+  hour = dep_time %/% 100,
+  minute = dep_time %% 100
+)
+```
+
+Operatori utili nei mutate #2
+========================================================
+
+- offset: "lead ()" e "lag ()" consentono di fare riferimento a valori precedente o immediatamente successivo
+- logaritmi come `log()`, `log2()`, `log10()`
+- confronti logici (`<`, `<=`, `>`, `> =`, `! =` e `==`) che restituiscono una colonna di TRUE, FALSE o NA a seconda della condizione inserita
+
+Operatori utili nei mutate #3 - Ranking
+========================================================
+
+- funzioni di ranking (creazione di classifica "i valori piccoli ai ranghi piccoli"), come `min_rank ()`
+
+```{r}
+y <- c(1, 2, 2, NA, 3, 4)
+min_rank(y) # oppure min_rank(desc(y))
+
+# o in alternativa
+row_number(y)
+```
+
+***
+
+```{r}
+dense_rank(y)
+percent_rank(y)
+cume_dist(y)
+
+```
+
+
+Esercizi #4
+========================================================
+
+1. Attualmente `dep_time` e` sched_dep_time` sono convenienti da guardare, ma difficili da calcolare perché non sono realmente numeri continui (crea un istogramma per verificarlo).
+    Convertili in una rappresentazione più conveniente del numero di minuti dalla mezzanotte precedente.
+
+2. Confronta "air_time" con "arr_time - dep_time" (crea ggplot per vederlo meglio).
+    Cosa ti aspetti di vedere?
+    Cosa vedi?
+    Cosa si deve fare per risolverlo?
+
+3. Confronta `dep_time`,` sched_dep_time` e `dep_delay`.
+    Come ti aspetteresti che quei tre numeri siano correlati?
+
+4. Trova i 10 voli più in ritardo utilizzando una funzione di classificazione. Come gestire i pareggi?
+
+5. Cosa restituisce "1: 3 + 1: 10"?
+    Perché?
+
+Nel prossimo incontro...
+========================================================
+
+- group_by()
+- summarize()
+- count()
+- passaggi in ggplot
